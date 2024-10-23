@@ -66,5 +66,3 @@ uav_pheno_web/
 ├── celery_worker.py          # Celery Worker 文件
 ├── requirements.txt          # 项目依赖文件
 └── Dockerfile                # Dockerfile
-
-### 

@@ -1,11 +1,13 @@
 # resources/result_show_resource.py
 
 from flask import Blueprint, request, jsonify
+from flask_jwt_extended import jwt_required  # 导入 jwt_required 装饰器
 from controller.result_show import run_r_script
 
 result_show_bp = Blueprint('result_show', __name__)
 
 @result_show_bp.route('/result_show', methods=['POST'])
+@jwt_required()  # 增加保护路由
 def result_show():
     data = request.json
     shapefile_path = data.get('shapefile')

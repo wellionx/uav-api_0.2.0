@@ -1,10 +1,12 @@
 from flask import Blueprint, request, jsonify
+from flask_jwt_extended import jwt_required  # 导入 jwt_required 装饰器
 from controller.image_predict import predict
 import os
 
 image_predict_bp = Blueprint('image_predict', __name__)
 
 @image_predict_bp.route('/predict', methods=['POST'])
+@jwt_required()  # 增加保护路由
 def image_predict():
     data = request.json
     model_name = data.get('model_name')

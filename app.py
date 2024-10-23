@@ -1,6 +1,6 @@
 from flask import Flask
 from flask_jwt_extended import JWTManager
-from auth.login import login_bp
+from resources.login_resource import login_bp
 from resources.metashape_resource import metashape_bp
 from resources.plot_grid_resource import plot_grid_bp  # 导入新的蓝图
 from resources.plot_image_mask_resource import plot_image_mask_bp  # 导入新的图像掩膜蓝图
