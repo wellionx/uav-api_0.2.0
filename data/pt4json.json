@@ -1,0 +1,4 @@
+{ "type": "Feature", "properties": { "id": 1 }, "geometry": { "type": "Point", "coordinates": [ 113.3314294, 28.2645357 ] } }
+{ "type": "Feature", "properties": { "id": 2 }, "geometry": { "type": "Point", "coordinates": [ 113.33148, 28.26436 ] } }
+{ "type": "Feature", "properties": { "id": 3 }, "geometry": { "type": "Point", "coordinates": [ 113.3319448, 28.2644733 ] } }
+{ "type": "Feature", "properties": { "id": 4 }, "geometry": { "type": "Point", "coordinates": [ 113.3318925, 28.2646478 ] } }
