@@ -22,6 +22,10 @@ input_pts <- args[3]
 # 设置默认输出目录
 out_dir <- "data/out"
 
+# 检查输出目录是否存在，如果不存在则创建
+if (!dir.exists(out_dir)) {
+    dir.create(out_dir, recursive = TRUE)
+}
 # 读取点文件
 points_layer <- st_read(input_pts)
 

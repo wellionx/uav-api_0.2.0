@@ -19,6 +19,6 @@ def login():
     if username == User_name and password == User_password:
         # 生成访问令牌，设置过期时间
         access_token = create_access_token(identity=username, expires_delta=timedelta(minutes=30))
-        return jsonify(access_token=access_token), 200
+        return jsonify(access_token=access_token, expires_in=1800), 200
     else:
         return jsonify({"error": "Username or password error"}), 401
