@@ -13,8 +13,8 @@ def metashape():
     if 'input_path' not in request.json:
         return jsonify({'error': 'No input path provided'}), 400
 
-    # 使用新的输入路径
-    input_path = "data/raw_uav_img"  # 固定为新的输入文件夹
+    # 从请求中获取输入路径
+    input_path = request.json['input_path']  # 从请求中获取输入路径
     task = process_images.apply_async(args=[input_path])  # 异步执行任务
     return jsonify({'task_id': task.id, 'status': 'Processing started'}), 202
 
