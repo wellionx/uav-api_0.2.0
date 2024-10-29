@@ -120,7 +120,8 @@ def load_model(model_name, crop, trait):
         logging.error(f"Error loading model: {str(e)}")
         raise
 
-def predict(model_name, imgfile, crop, trait):
+def predict(model_name, imgfile, crop, trait, model=None):
+    """修改预测函数以接受预加载的模型"""
     image_scale = 1. / 255
     image_mean = np.array([0.0210, 0.0193, 0.0181]).reshape((1, 1, 3))
     image_std = np.array([1, 1, 1]).reshape((1, 1, 3))
