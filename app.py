@@ -4,7 +4,7 @@ from resources.login_resource import login_bp # 导入登录蓝图
 #from resources.metashape_resource import metashape_bp
 from resources.plot_seg_resource import plot_seg_bp  # 导入新的蓝图
 from resources.plot_image_mask_resource import plot_image_mask_bp  # 导入新的图像掩膜蓝图
-from resources.image_predict_resource import image_predict_bp  # 导入图像推理蓝图
+from resources.image_predict_resource import image_predict_bp, ModelManager  # 导入图像推理蓝图
 from resources.result_show_resource import result_show_bp  # 导入结果可视化蓝图
 from config.config import Config
 import logging

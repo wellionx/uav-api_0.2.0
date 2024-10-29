@@ -10,19 +10,29 @@ logging.basicConfig(level=logging.INFO)
 
 image_predict_bp = Blueprint('image_predict', __name__)
 
-# 模型缓存
-model_cache = {}
-
-def get_model(model_name, crop, trait):
-    global model_cache
-    if model_name not in model_cache:
-        try:
-            model_cache[model_name] = load_model(model_name, crop, trait)
-            logging.info(f"Model {model_name} loaded successfully.")
-        except Exception as e:
-            logging.error(f"Error loading model {model_name}: {str(e)}")
-            raise
-    return model_cache[model_name]
+class ModelManager:
+    _instance = None
+    _models = {}
+    
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(ModelManager, cls).__new__(cls)
+        return cls._instance
+    
+    @classmethod
+    def get_model(cls, model_name, crop, trait):
+        """获取模型实例，如果不存在则创建"""
+        key = f"{model_name}_{crop}_{trait}"
+        if key not in cls._models:
+            try:
+                from controller.image_predict import load_model
+                model = load_model(model_name, crop, trait)
+                cls._models[key] = model
+                logging.info(f"Model {key} loaded successfully")
+            except Exception as e:
+                logging.error(f"Error loading model {key}: {str(e)}")
+                raise
+        return cls._models[key]
 
 @image_predict_bp.route('/predict', methods=['POST'])
 @jwt_required()  # 增加保护路由
