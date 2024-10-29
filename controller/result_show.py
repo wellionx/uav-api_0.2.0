@@ -7,7 +7,7 @@ import os
 # 设置日志记录
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-def run_r_script(shapefile_path, countfile_path, output_dir='out/'):
+def run_r_script(shapefile_path, countfile_path, output_dir='data/out/'):
     """运行 R 脚本以生成可视化结果"""
     
     # 确保输出目录存在
