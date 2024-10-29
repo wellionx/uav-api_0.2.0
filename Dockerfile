@@ -35,7 +35,7 @@ COPY . /app
 WORKDIR /app
 
 # Expose the port the app runs on
-EXPOSE 5000
+EXPOSE 8081
 
 # Run the application
 CMD ["gunicorn", "-w", "1", "--threads", "64", "-b", "0.0.0.0:5000", "--access-logfile", "./log/access.log", "--error-logfile", "./log/error.log", "-t", "3600", "app:app"]

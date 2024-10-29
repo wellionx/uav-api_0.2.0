@@ -10,10 +10,10 @@ def plot_image_mask():
     data = request.json
     shapefile_path = data.get('shapefile')
     tif_path = data.get('tif')
-    output_dir = data.get('output_dir', 'image/')
 
     try:
-        crop_geotiff_with_shapefile(tif_path, shapefile_path, output_dir)
+        # 调用 crop_geotiff_with_shapefile 函数
+        crop_geotiff_with_shapefile(tif_path, shapefile_path)
         return jsonify({"message": "Processing completed successfully."}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500

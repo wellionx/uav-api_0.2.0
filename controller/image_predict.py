@@ -9,22 +9,29 @@ from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
 from PIL import Image
 from collections import defaultdict
-from models import IntegrateNet, V3liteNet, V3segnet, V3segplus  # 从 models 导入模型
+import argparse
+import logging
+from models.IntegrateNet import *
+from models.V3liteNet import *
 
+# 设置日志记录
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def read_image(x):
-    img_arr = np.array(Image.open(x))
-    return img_arr
-
+    try:
+        img_arr = np.array(Image.open(x))
+        return img_arr
+    except Exception as e:
+        logging.error(f"Error reading image {x}: {e}")
+        return None
 
 def Data_list(path):
     return [filename[:-4] for filename in os.listdir(path) if filename.endswith('.jpg')]
 
-
 class MaizeDataset(Dataset):
     def __init__(self, imgfile, transform=None):
         self.imgfile = imgfile
-        self.data_list = Data_list(os.path.join(".", imgfile))  # 使用当前目录
+        self.data_list = Data_list(imgfile)  # 使用当前目录
         self.transform = transform
         self.images = defaultdict(lambda: None)  # 使用 defaultdict 缓存图像
         self.image_list = self.data_list  # 初始化 image_list
@@ -35,13 +42,14 @@ class MaizeDataset(Dataset):
     def __getitem__(self, idx):
         file_name = self.data_list[idx]
         if self.images[file_name] is None:
-            image = read_image(os.path.join(".", self.imgfile, file_name + ".jpg"))  # 使用当前目录
+            image = read_image(os.path.join(self.imgfile, file_name + ".jpg"))  # 使用当前目录
+            if image is None:
+                raise ValueError(f"Image {file_name} could not be loaded.")
             self.images[file_name] = image.astype('float32')
         sample = {'image': self.images[file_name]}
         if self.transform:
             sample = self.transform(sample)
         return sample
-
 
 class Normalize(object):
     def __init__(self, scale, mean, std):
@@ -53,7 +61,6 @@ class Normalize(object):
         image = sample['image']
         image = (self.scale * image - self.mean) / self.std
         return {'image': image}
-
 
 class ZeroPadding(object):
     def __init__(self, psize=32):
@@ -73,39 +80,45 @@ class ZeroPadding(object):
             image = F.pad(torch.from_numpy(image), tmp_pad)  # 确保 image 是 Tensor
         return {'image': image}
 
-
 class ToTensor(object):
     """Convert ndarrays in sample to Tensors."""
-
     def __call__(self, sample):
         image = sample['image']
         image = image.transpose((2, 0, 1))  # H x W x C -> C x H x W
         return {'image': torch.from_numpy(image).float()}  # 确保转换为 float32
 
-
 def load_model(model_name, crop, trait):
-    # 根据模型名称选择权重文件的路径
-    if model_name == 'IntegrateNet':
-        weights_path = os.path.join('weights', crop, trait, f'{model_name}_model_best.pth')
-        net = IntegrateNet().cuda()
-    else:
-        weights_path = os.path.join('weights', crop, trait, f'{model_name}_model_best.pth.tar')
-        net = {
-            'V3liteNet': V3liteNet(),
-            'V3segnet': V3segnet(),
-            'V3segplus': V3segplus()
-        }.get(model_name)
+    """加载模型并返回"""
+    try:
+        if model_name == 'IntegrateNet':
+            weights_path = os.path.join('weights', crop, trait, f'{model_name}_model_best.pth')
+            net = IntegrateNet().cuda()
+        else:
+            weights_path = os.path.join('weights', crop, trait, f'{model_name}_model_best.pth.tar')
+            if model_name == 'V3liteNet':
+                net = V3lite().cuda()
+                net = nn.DataParallel(net)
+            elif model_name == 'V3segnet':
+                net = V3seg().cuda()
+                net = nn.DataParallel(net)
+            elif model_name == 'V3segplus':
+                net = V3segplus().cuda()
+                net = nn.DataParallel(net)
+            else:
+                raise ValueError(f"Unknown model name: {model_name}")
 
-        if net is None:
-            raise ValueError(f"Unknown model name: {model_name}")
-
-        net = nn.DataParallel(net).cuda()  # 包装为 DataParallel
-
-    checkpoint = torch.load(weights_path)
-    net.load_state_dict(checkpoint['state_dict'])
-    net.eval()
-    return net
-
+        checkpoint = torch.load(weights_path)
+        net.load_state_dict(checkpoint['state_dict'], strict=False)
+        net.eval()
+        
+        # 确保模型参数不需要梯度
+        for param in net.parameters():
+            param.requires_grad = False
+            
+        return net
+    except Exception as e:
+        logging.error(f"Error loading model: {str(e)}")
+        raise
 
 def predict(model_name, imgfile, crop, trait):
     image_scale = 1. / 255
@@ -119,13 +132,13 @@ def predict(model_name, imgfile, crop, trait):
         ZeroPadding(output_stride)
     ])
 
-    valset = MaizeDataset(imgfile=imgfile, transform=val_transforms)  # 使用当前目录
+    valset = MaizeDataset(imgfile=imgfile, transform=val_transforms)
     val_loader = DataLoader(valset, batch_size=1, shuffle=False, num_workers=0, pin_memory=True)
 
-    # 加载模型
-    net = load_model(model_name, crop, trait)
+    # 使用传入的模型或加载新模型
+    net = model if model is not None else load_model(model_name, crop, trait)
+    net.eval()  # 确保模型处于评估模式
 
-    # 进行预测
     pd_counts = []
     for i, sample in enumerate(val_loader):
         image = sample['image'].cuda()
@@ -153,3 +166,18 @@ def predict(model_name, imgfile, crop, trait):
     pd.DataFrame(pd_counts).to_csv(output_file, index=False)  # 保存为 CSV 文件
 
     return pd_counts
+
+def main():
+    parser = argparse.ArgumentParser(description='Image Prediction using specified model.')
+    parser.add_argument('--model', type=str, required=True, help='Model name (e.g., IntegrateNet, V3liteNet).')
+    parser.add_argument('--imgfile', type=str, required=True, help='Path to the image file directory.')
+    parser.add_argument('--crop', type=str, required=True, help='Crop type.')
+    parser.add_argument('--trait', type=str, required=True, help='Trait type.')
+    args = parser.parse_args()
+
+    logging.info(f"Starting prediction with model: {args.model}, images from: {args.imgfile}, crop: {args.crop}, trait: {args.trait}")
+    results = predict(args.model, args.imgfile, args.crop, args.trait)
+    logging.info("Prediction results: %s", results)
+
+if __name__ == "__main__":
+    main()

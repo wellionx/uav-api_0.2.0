@@ -62,5 +62,5 @@ grid_shapefile <- st_sf(geometry, crs = st_crs(points_layer)) %>% mutate(ID = se
 print(grid_shapefile)
 
 # 写入磁盘
-fn <- file.path(out_dir, "plots_grid.shp")
+fn <- file.path(out_dir, "plot_grids.shp")
 st_write(grid_shapefile, fn, delete_layer = TRUE) # 覆盖写入
