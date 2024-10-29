@@ -24,18 +24,18 @@ def ensure_output_dir(output_dir):
         logging.info(f"Creating output directory {output_dir}")
         output_dir.mkdir(parents=True)
 
-@celery.task
+@celery.task(name='metashape.process_images')
 def process_images(input_path):
     """处理图像并生成正射影像"""
-    with current_app.app_context():  # 确保使用 Flask 应用上下文
-        output_dir = Path("./data/out")  # 更新输出目录
-        ensure_output_dir(output_dir)
+    output_dir = Path("./data/out")  # 更新输出目录
+    ensure_output_dir(output_dir)
 
-        photos = find_files(input_path, [".jpg", ".jpeg", ".tif", ".tiff"])
-        if not photos:
-            logging.error("No photos found to process.")
-            return {'error': 'No photos found to process.'}
+    photos = find_files(input_path, [".jpg", ".jpeg", ".tif", ".tiff"])
+    if not photos:
+        logging.error("No photos found to process.")
+        return {'error': 'No photos found to process.'}
 
+    try:
         doc = Metashape.app.document
         if not doc:
             doc = Metashape.Document()
@@ -49,11 +49,11 @@ def process_images(input_path):
         doc.save(os.path.join(input_path, "project.psx"))
 
         chunk.buildDem(source_data=Metashape.DataSource.PointCloudData,
-                       interpolation=Metashape.Interpolation.EnabledInterpolation)
+                      interpolation=Metashape.Interpolation.EnabledInterpolation)
         doc.save()
 
         chunk.buildOrthomosaic(surface_data=Metashape.DataSource.ElevationData,
-                               blending_mode=Metashape.BlendingMode.MosaicBlending)
+                              blending_mode=Metashape.BlendingMode.MosaicBlending)
         doc.save()
 
         output_tif_path = output_dir / "output.tif"
@@ -64,3 +64,6 @@ def process_images(input_path):
         Metashape.app.quit()
 
         return {'message': 'Processing complete', 'output_file': str(output_tif_path)}
+    except Exception as e:
+        logging.error(f"Error processing images: {str(e)}")
+        return {'error': str(e)}

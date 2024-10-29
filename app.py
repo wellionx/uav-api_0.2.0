@@ -1,3 +1,4 @@
+import os
 from flask import Flask
 from flask_jwt_extended import JWTManager
 from resources.login_resource import login_bp # 导入登录蓝图
@@ -35,8 +36,8 @@ def initialize_models():
 
 if __name__ == '__main__':
     # 启动 Celery worker
-    subprocess.Popen(['celery', '-A', 'celery_worker', 'worker', '--loglevel=info'])
-
+    os.system('celery -A celery_worker worker --loglevel=info &')
+    
     # 启动 Flask 应用
     #app.run(host='0.0.0.0', port=5000)  # 测试环境
     app.run(host='0.0.0.0', port=8081) #对外监听
