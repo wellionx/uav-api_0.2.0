@@ -1,9 +1,15 @@
 from celery import Celery
-from app import app  # 确保导入 Flask 应用
 
-def make_celery(app):
-    celery = Celery(app.import_name, backend='redis://localhost:6379/0', broker='redis://localhost:6379/0')
-    celery.conf.update(app.config)
-    return celery
+# 创建 Celery 实例
+celery = Celery('tasks',
+                backend='redis://localhost:6379/0',
+                broker='redis://localhost:6379/0')
 
-celery = make_celery(app)
+# 可选：配置 Celery
+celery.conf.update(
+    task_serializer='json',
+    accept_content=['json'],
+    result_serializer='json',
+    timezone='Asia/Shanghai',
+    enable_utc=True,
+)
