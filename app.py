@@ -34,5 +34,9 @@ def initialize_models():
         logging.error(f"Error initializing models: {str(e)}")
 
 if __name__ == '__main__':
+    # 启动 Celery worker
+    subprocess.Popen(['celery', '-A', 'celery_worker', 'worker', '--loglevel=info'])
+
+    # 启动 Flask 应用
     #app.run(host='0.0.0.0', port=5000)  # 测试环境
     app.run(host='0.0.0.0', port=8081) #对外监听
