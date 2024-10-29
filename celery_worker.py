@@ -13,3 +13,6 @@ celery.conf.update(
     timezone='Asia/Shanghai',
     enable_utc=True,
 )
+
+# 导入任务模块
+import controller.metashape  # 确保导入任务模块
