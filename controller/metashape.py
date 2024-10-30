@@ -7,6 +7,8 @@ import Metashape
 from celery_worker import celery  # 导入 Celery 实例
 from flask import current_app  # 导入 Flask 当前应用上下文
 
+# Disable CUDA
+Metashape.app.settings.setValue("main/gpu_enable_cuda", "0")
 # 设置日志记录
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
