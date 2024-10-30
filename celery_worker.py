@@ -2,8 +2,8 @@ from celery import Celery
 
 # 创建 Celery 实例
 celery = Celery('tasks',
-                backend='redis://localhost:6379/0',
-                broker='redis://localhost:6379/0')
+                backend='redis://localhost:6380/0',
+                broker='redis://localhost:6380/0')
 
 # 可选：配置 Celery
 celery.conf.update(

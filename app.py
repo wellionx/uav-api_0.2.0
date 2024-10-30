@@ -17,7 +17,7 @@ jwt = JWTManager(app)
 app.config.from_object(Config)
 
 # 添加 Celery 配置
-app.config['CELERY_RESULT_BACKEND'] = 'redis://localhost:6379/0'
+app.config['CELERY_RESULT_BACKEND'] = 'redis://localhost:6380/0'
 
 # 注册蓝图
 app.register_blueprint(login_bp)  # 注册登录蓝图
