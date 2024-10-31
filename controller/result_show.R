@@ -1,4 +1,4 @@
-# controller/result_show.R
+#!/usr/bin/env Rscript
 
 # The R code is using to show plot id arrangement
 # count values in each plot and count values distribution
@@ -22,8 +22,17 @@ shapefile_path <- args[1]
 countfile_path <- args[2]
 output_dir <- args[3]
 
+# Check if output directory exists, if not create it
+if (!dir.exists(output_dir)) {
+    dir.create(output_dir, recursive = TRUE)
+}
+
 # Read the shapefile
-corn_plot <- st_read(shapefile_path, quiet = TRUE)
+corn_plot <- tryCatch({
+  st_read(shapefile_path, quiet = TRUE)
+}, error = function(e) {
+  stop(paste("Error reading shapefile:", e$message), call. = FALSE)
+})
 
 # Calculate the centroid of each plot and bind it to the data frame
 corn_plot <- cbind(corn_plot, st_coordinates(st_centroid(corn_plot)))
@@ -44,7 +53,11 @@ p1 <- ggplot() +
 ggsave(filename = plot_id_map_path, plot = p1, height = 5, width = 10, dpi = 300, units = "in")
 
 # Read the count data
-df_count <- read.csv(countfile_path)
+df_count <- tryCatch({
+  read.csv(countfile_path)
+}, error = function(e) {
+  stop(paste("Error reading count file:", e$message), call. = FALSE)
+})
 names(df_count)[1] <- "ID"
 
 # Merge count data with the plot data

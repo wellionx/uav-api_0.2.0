@@ -11,21 +11,20 @@ library(dplyr)
 
 # 从命令行参数获取输入
 args <- commandArgs(trailingOnly = TRUE)
-if (length(args) < 3) {
-  stop("Usage: Rscript this_script.R num_rows num_cols input_pts", call. = FALSE)
+if (length(args) < 4) {
+  stop("Usage: Rscript this_script.R num_rows num_cols input_pts output_dir", call. = FALSE)
 }
 
 num_rows <- as.integer(args[1])
 num_cols <- as.integer(args[2])
 input_pts <- args[3]
-
-# 设置默认输出目录
-out_dir <- "data/out"
+out_dir <- args[4]
 
 # 检查输出目录是否存在，如果不存在则创建
 if (!dir.exists(out_dir)) {
     dir.create(out_dir, recursive = TRUE)
 }
+
 # 读取点文件
 points_layer <- st_read(input_pts)
 

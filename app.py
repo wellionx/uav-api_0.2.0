@@ -1,41 +1,23 @@
 import os
-from flask import Flask
+from flask import Flask, jsonify
 from flask_jwt_extended import JWTManager
 from resources.login_resource import login_bp  # 导入登录蓝图
-from resources.metashape_resource import metashape_bp # 导入拼图蓝图
+from resources.metashape_resource import metashape_bp  # 导入拼图蓝图
 from resources.plot_seg_resource import plot_seg_bp  # 导入新的蓝图
 from resources.plot_image_mask_resource import plot_image_mask_bp  # 导入新的图像掩膜蓝图
 from resources.image_predict_resource import image_predict_bp, ModelManager  # 导入图像推理蓝图
 from resources.result_show_resource import result_show_bp  # 导入结果可视化蓝图
 from config.config import Config
-import logging
 from concurrent.futures import ThreadPoolExecutor
 from multiprocessing import Manager
 
-# 创建必要的目录
-os.makedirs('./logs', exist_ok=True)
-os.makedirs('./data/out', exist_ok=True)
-
-# 配置日志
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('./logs/app.log'),
-        logging.StreamHandler()
-    ]
-)
+app = Flask(__name__)
+app.config.from_object(Config)
 
 # 创建线程池和任务管理器（全局）
-executor = ThreadPoolExecutor(max_workers=8)
+executor = ThreadPoolExecutor(max_workers=app.config['EXECUTOR_MAX_WORKERS'])
 manager = Manager()
 task_status = manager.dict()
-
-app = Flask(__name__)
-
-# 初始化 JWT
-jwt = JWTManager(app)
-app.config.from_object(Config)
 
 # 将线程池和任务管理器添加到 app 配置中
 app.config['EXECUTOR'] = executor
