@@ -13,6 +13,7 @@ import argparse
 import logging
 from models.IntegrateNet import *
 from models.V3liteNet import *
+from flask import current_app  # 导入 current_app
 
 # 设置日志记录
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -161,7 +162,7 @@ def predict(model_name, imgfile, crop, trait, model=None):
         pd_counts.append({'image_list': valset.image_list[i], 'pdcount': pdcount})
 
     # 保存预测结果为 CSV 文件
-    output_dir = 'data/out'  # 确保输出目录
+    output_dir = current_app.config['OUTPUT_DIR']  # 从配置中获取输出目录
     os.makedirs(output_dir, exist_ok=True)  # 创建目录（如果不存在）
     output_file = os.path.join(output_dir, 'predictions.csv')
     pd.DataFrame(pd_counts).to_csv(output_file, index=False)  # 保存为 CSV 文件

@@ -7,11 +7,12 @@ import os
 # 设置日志记录
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-def run_r_script(shapefile_path, countfile_path, output_dir='data/out/'):
+def run_r_script(shapefile_path, countfile_path):
     """运行 R 脚本以生成可视化结果"""
     
-    # 确保输出目录存在
-    os.makedirs(output_dir, exist_ok=True)
+    # 从配置中获取输出目录
+    output_dir = current_app.config['OUTPUT_DIR']  # 确保导入 current_app
+    os.makedirs(output_dir, exist_ok=True)  # 确保输出目录存在
 
     # R 脚本路径
     r_script_path = "controller/result_show.R"  # R 脚本的相对路径
@@ -22,7 +23,7 @@ def run_r_script(shapefile_path, countfile_path, output_dir='data/out/'):
         r_script_path,
         shapefile_path,
         countfile_path,
-        output_dir
+        output_dir  # 仍然需要传递 output_dir 给 R 脚本
     ]
 
     # 执行 R 脚本

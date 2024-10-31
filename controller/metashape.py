@@ -33,7 +33,7 @@ def ensure_output_dir(output_dir):
 
 def process_images(input_path, task_status, task_id):
     """处理图像并生成正射影像"""
-    output_dir = Path(current_app.config['OUTPUT_DIR'])  # 从配置中获取输出目录
+    output_dir = current_app.config['OUTPUT_DIR']  # 从 Flask 应用配置中获取输出目录
     ensure_output_dir(output_dir)
 
     # 更新任务状态
