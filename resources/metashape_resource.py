@@ -18,8 +18,8 @@ def metashape():
         return jsonify({'error': 'No input path provided'}), 400
 
     input_path = request.json['input_path']
-    start_processing(input_path, task_status)
-    return jsonify({'status': 'Processing started'}), 202
+    task_id = start_processing(input_path, task_status)  # 获取任务 ID
+    return jsonify({'task_id': task_id, 'status': 'Processing started'}), 202  # 返回任务 ID
 
 @metashape_bp.route('/task_status/<task_id>', methods=['GET'])
 @jwt_required()

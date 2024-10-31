@@ -31,13 +31,12 @@ def ensure_output_dir(output_dir):
         logging.info(f"Creating output directory {output_dir}")
         output_dir.mkdir(parents=True)
 
-def process_images(input_path, task_status):
+def process_images(input_path, task_status, task_id):
     """处理图像并生成正射影像"""
     output_dir = Path("./data/out")
     ensure_output_dir(output_dir)
 
     # 更新任务状态
-    task_id = str(uuid.uuid4())
     task_status[task_id] = {'status': 'PROCESSING', 'message': 'Processing images...'}
 
     photos = find_files(input_path, [".jpg", ".jpeg", ".tif", ".tiff"])
@@ -79,7 +78,9 @@ def process_images(input_path, task_status):
 
 def start_processing(input_path, task_status):
     """启动异步处理任务"""
-    executor.submit(process_images, input_path, task_status)
+    task_id = str(uuid.uuid4())  # 生成唯一的任务 ID
+    executor.submit(process_images, input_path, task_status, task_id)  # 将 task_id 传递给处理函数
+    return task_id  # 返回任务 ID
 
 def get_task_status(task_id, task_status):
     """获取任务状态"""
