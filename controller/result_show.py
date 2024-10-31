@@ -3,6 +3,7 @@
 import subprocess
 import logging
 import os
+from flask import current_app  # 导入 Flask 应用的当前上下文
 
 # 设置日志记录
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
