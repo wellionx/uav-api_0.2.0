@@ -15,6 +15,9 @@ from multiprocessing import Manager
 app = Flask(__name__)
 app.config.from_object(Config)
 
+# 初始化 JWTManager
+jwt = JWTManager(app)  # 确保在创建 Flask 应用后初始化 JWTManager
+
 # 创建线程池和任务管理器（全局）
 executor = ThreadPoolExecutor(max_workers=app.config['EXECUTOR_MAX_WORKERS'])
 manager = Manager()
