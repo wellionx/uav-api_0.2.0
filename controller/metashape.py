@@ -4,13 +4,18 @@ import os
 import logging
 from pathlib import Path
 import Metashape
-from celery_worker import celery  # 导入 Celery 实例
-from flask import current_app  # 导入 Flask 当前应用上下文
+from flask import current_app
+from concurrent.futures import ThreadPoolExecutor
+import uuid
 
 # Disable CUDA
 Metashape.app.settings.setValue("main/gpu_enable_cuda", "0")
+
 # 设置日志记录
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+# 创建线程池
+executor = ThreadPoolExecutor(max_workers=8)
 
 def find_files(folder, types):
     """在给定文件夹中找到所有指定类型的文件"""
@@ -26,16 +31,20 @@ def ensure_output_dir(output_dir):
         logging.info(f"Creating output directory {output_dir}")
         output_dir.mkdir(parents=True)
 
-@celery.task(name='metashape.process_images')
-def process_images(input_path):
+def process_images(input_path, task_status):
     """处理图像并生成正射影像"""
-    output_dir = Path("./data/out")  # 更新输出目录
+    output_dir = Path("./data/out")
     ensure_output_dir(output_dir)
+
+    # 更新任务状态
+    task_id = str(uuid.uuid4())
+    task_status[task_id] = {'status': 'PROCESSING', 'message': 'Processing images...'}
 
     photos = find_files(input_path, [".jpg", ".jpeg", ".tif", ".tiff"])
     if not photos:
         logging.error("No photos found to process.")
-        return {'error': 'No photos found to process.'}
+        task_status[task_id] = {'status': 'FAILURE', 'error': 'No photos found to process.'}
+        return
 
     try:
         doc = Metashape.app.document
@@ -58,14 +67,20 @@ def process_images(input_path):
                               blending_mode=Metashape.BlendingMode.MosaicBlending)
         doc.save()
 
-        output_tif_path = output_dir / "output.tif"
+        output_tif_path = output_dir / f"output_{task_id}.tif"
         chunk.exportRaster(str(output_tif_path))
         logging.info(f"Processing complete. Output file saved to {output_tif_path}")
 
-        doc.close()
-        Metashape.app.quit()
+        task_status[task_id] = {'status': 'SUCCESS', 'result': str(output_tif_path)}
 
-        return {'message': 'Processing complete', 'output_file': str(output_tif_path)}
     except Exception as e:
         logging.error(f"Error processing images: {str(e)}")
-        return {'error': str(e)}
+        task_status[task_id] = {'status': 'FAILURE', 'error': str(e)}
+
+def start_processing(input_path, task_status):
+    """启动异步处理任务"""
+    executor.submit(process_images, input_path, task_status)
+
+def get_task_status(task_id, task_status):
+    """获取任务状态"""
+    return task_status.get(task_id, {'status': 'PENDING', 'message': 'Task not found'})

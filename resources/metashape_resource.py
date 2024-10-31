@@ -2,41 +2,27 @@
 
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required
-from celery.result import AsyncResult
-from controller.metashape import process_images
+from controller.metashape import start_processing, get_task_status
+from multiprocessing import Manager
 
 metashape_bp = Blueprint('metashape', __name__)
 
+# 创建任务状态管理器
+manager = Manager()
+task_status = manager.dict()
 
 @metashape_bp.route('/metashape', methods=['POST'])
-@jwt_required()  # 保护此路由
+@jwt_required()
 def metashape():
     if 'input_path' not in request.json:
         return jsonify({'error': 'No input path provided'}), 400
 
-    # 从请求中获取输入路径
-    input_path = request.json['input_path']  # 从请求中获取输入路径
-    task = process_images.delay(input_path)  # 异步执行任务
-    return jsonify({'task_id': task.id, 'status': 'Processing started'}), 202
-
+    input_path = request.json['input_path']
+    start_processing(input_path, task_status)
+    return jsonify({'status': 'Processing started'}), 202
 
 @metashape_bp.route('/task_status/<task_id>', methods=['GET'])
-@jwt_required()  # 保护此路由
-def task_status(task_id):
-    task = AsyncResult(task_id)
-    if task.state == 'PENDING':
-        response = {
-            'state': task.state,
-            'status': 'Pending...'
-        }
-    elif task.state != 'FAILURE':
-        response = {
-            'state': task.state,
-            'result': task.result
-        }
-    else:
-        response = {
-            'state': task.state,
-            'error': str(task.info),  # 任务失败的原因
-        }
-    return jsonify(response)
+@jwt_required()
+def task_status_route(task_id):
+    status = get_task_status(task_id, task_status)
+    return jsonify(status)
