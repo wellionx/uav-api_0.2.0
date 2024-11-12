@@ -128,51 +128,95 @@ def predict(model_name, imgfile, crop, trait, model=None):
     image_std = np.array([1, 1, 1]).reshape((1, 1, 3))
     output_stride = 8
 
-    val_transforms = transforms.Compose([
-        Normalize(scale=image_scale, std=image_std, mean=image_mean),
-        ToTensor(),
-        ZeroPadding(output_stride)
-    ])
-
-    valset = MaizeDataset(imgfile=imgfile, transform=val_transforms)
-    val_loader = DataLoader(valset, batch_size=1, shuffle=False, num_workers=0, pin_memory=True)
-
-    # 使用传入的模型或加载新模型
-    net = model if model is not None else load_model(model_name, crop, trait)
-    net.eval()  # 确保模型处于评估模式
-
-    pd_counts = []
-    for i, sample in enumerate(val_loader):
-        image = sample['image'].cuda()
+    # 检查 imgfile 是否为单个文件
+    if os.path.isfile(imgfile):
+        # 直接读取单张图片
+        image = read_image(imgfile)
+        if image is None:
+            raise ValueError(f"Image {imgfile} could not be loaded.")
+        
+        # 进行图像预处理
+        val_transforms = transforms.Compose([
+            Normalize(scale=image_scale, std=image_std, mean=image_mean),
+            ToTensor(),
+            ZeroPadding(output_stride)
+        ])
+        
+        sample = {'image': image}
+        sample = val_transforms(sample)
+        
+        # 使用传入的模型或加载新模型
+        net = model if model is not None else load_model(model_name, crop, trait)
+        net.eval()  # 确保模型处于评估模式
 
         with torch.no_grad():  # 禁用梯度计算
+            image_tensor = sample['image'].cuda().unsqueeze(0)  # 增加 batch 维度
             if model_name == 'IntegrateNet':
-                dic = net(image)
+                dic = net(image_tensor)
                 output = dic['density']  # predicted density map
                 output = output.squeeze().cpu().detach().numpy()
                 output = np.clip(output, 0, None)  # eliminate < 0 values
                 pdcount = math.ceil(output.sum())  # 取整数
             else:
-                dic = net(image, is_normalize=False)  # 其他模型的推理
+                dic = net(image_tensor, is_normalize=False)  # 其他模型的推理
                 R = dic['R']
                 R = R.cpu().numpy()  # 将 Tensor 移动到 CPU 并转换为 NumPy 数组
                 R = np.clip(R, 0, None)  # 使用 NumPy 的 clip 函数
                 pdcount = math.ceil(R.sum())  # 取整数
 
-        pd_counts.append({'image_list': valset.image_list[i], 'pdcount': pdcount})
+        return pdcount  # 返回预测计数
 
-    # 保存预测结果为 CSV 文件
-    output_dir = current_app.config['OUTPUT_DIR']  # 从配置中获取输出目录
-    os.makedirs(output_dir, exist_ok=True)  # 创建目录（如果不存在）
-    output_file = os.path.join(output_dir, 'predictions.csv')
-    pd.DataFrame(pd_counts).to_csv(output_file, index=False)  # 保存为 CSV 文件
+    else:
+        # 如果是目录，使用 MaizeDataset
+        val_transforms = transforms.Compose([
+            Normalize(scale=image_scale, std=image_std, mean=image_mean),
+            ToTensor(),
+            ZeroPadding(output_stride)
+        ])
 
-    return pd_counts
+        valset = MaizeDataset(imgfile=imgfile, transform=val_transforms)
+        val_loader = DataLoader(valset, batch_size=1, shuffle=False, num_workers=0, pin_memory=True)
+
+        # 使用传入的模型或加载新模型
+        net = model if model is not None else load_model(model_name, crop, trait)
+        net.eval()  # 确保模型处于评估模式
+
+        pd_counts = []
+        for i, sample in enumerate(val_loader):
+            image = sample['image'].cuda()
+
+            with torch.no_grad():  # 禁用梯度计算
+                if model_name == 'IntegrateNet':
+                    dic = net(image)
+                    output = dic['density']  # predicted density map
+                    output = output.squeeze().cpu().detach().numpy()
+                    output = np.clip(output, 0, None)  # eliminate < 0 values
+                    pdcount = math.ceil(output.sum())  # 取整数
+                else:
+                    dic = net(image, is_normalize=False)  # 其他模型的推理
+                    R = dic['R']
+                    R = R.cpu().numpy()  # 将 Tensor 移动到 CPU 并转换为 NumPy 数组
+                    R = np.clip(R, 0, None)  # 使用 NumPy 的 clip 函数
+                    pdcount = math.ceil(R.sum())  # 取整数
+
+            pd_counts.append({'image_list': valset.image_list[i], 'pdcount': pdcount})
+
+        # 保存预测结果为 CSV 文件
+        output_dir = current_app.config['OUTPUT_DIR']  # 从配置中获取输出目录
+        os.makedirs(output_dir, exist_ok=True)  # 创建目录（如果不存在）
+        output_file = os.path.join(output_dir, 'predictions.csv')
+        pd.DataFrame(pd_counts).to_csv(output_file, index=False)  # 保存为 CSV 文件
+
+        return pd_counts
+
+def count(imgfile, model_name, crop, trait):
+    """用于单张图片的计数预测"""
+    return predict(model_name, imgfile, crop, trait)
 
 def main():
     parser = argparse.ArgumentParser(description='Image Prediction using specified model.')
     parser.add_argument('--model', type=str, required=True, help='Model name (e.g., IntegrateNet, V3liteNet).')
-    parser.add_argument('--imgfile', type=str, required=True, help='Path to the image file directory.')
+    parser.add_argument('--imgfile', type=str, required=True, help='Path to the image file or directory.')
     parser.add_argument('--crop', type=str, required=True, help='Crop type.')
     parser.add_argument('--trait', type=str, required=True, help='Trait type.')
     args = parser.parse_args()

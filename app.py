@@ -40,7 +40,15 @@ app.register_blueprint(result_show_bp)  # 注册结果可视化蓝图
 def initialize_models():
     try:
         # 预加载常用模型
-        ModelManager.get_model('IntegrateNet', 'maize', 'tassel_count')
+        crops = ['maize']
+        traits = ['seedling_count', 'tassel_count']
+        models = ['IntegrateNet', 'V3liteNet']  # 可以根据需要添加更多模型
+
+        for crop in crops:
+            for trait in traits:
+                for model in models:
+                    ModelManager.get_model(model, crop, trait)
+        
         logging.info("Models initialized successfully")
     except Exception as e:
         logging.error(f"Error initializing models: {str(e)}")

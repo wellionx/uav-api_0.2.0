@@ -40,8 +40,8 @@ def image_predict():
     data = request.json
 
     # 输入验证
-    model_name = data.get('model_name')
-    imgfile = data.get('imgfile', 'data/image/')  # 默认图像文件夹
+    model_name = data.get('model_name', 'IntegrateNet')  # 设置默认模型为 IntegrateNet
+    imgfile = data.get('imgfile')  # 可以是单个文件路径或目录
     crop = data.get('crop', 'maize')  # 默认作物
     trait = data.get('trait', 'seedling_count')  # 默认性状
 
@@ -59,7 +59,7 @@ def image_predict():
         
         # 调用预测函数，传入已加载的模型
         with torch.no_grad():
-            results = predict(model_name, imgfile, crop, trait, model)
+            results = predict(model_name, imgfile, crop, trait, model)  # 处理单张图片或目录
         return jsonify({"results": results}), 200
     except Exception as e:
         logging.error(f"Prediction error: {str(e)}")
