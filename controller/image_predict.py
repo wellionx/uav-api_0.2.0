@@ -209,10 +209,6 @@ def predict(model_name, imgfile, crop, trait, model=None):
 
         return pd_counts
 
-def count(imgfile, model_name, crop, trait):
-    """用于单张图片的计数预测"""
-    return predict(model_name, imgfile, crop, trait)
-
 def main():
     parser = argparse.ArgumentParser(description='Image Prediction using specified model.')
     parser.add_argument('--model', type=str, required=True, help='Model name (e.g., IntegrateNet, V3liteNet).')

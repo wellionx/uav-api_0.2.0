@@ -39,19 +39,25 @@ app.register_blueprint(result_show_bp)  # 注册结果可视化蓝图
 @app.before_first_request
 def initialize_models():
     try:
-        # 预加载常用模型
-        crops = ['maize']
-        traits = ['seedling_count', 'tassel_count']
-        models = ['IntegrateNet', 'V3liteNet']  # 可以根据需要添加更多模型
+        # 预加载 seedling_count 的 IntegrateNet 模型
+        logging.info("Loading seedling_count model (IntegrateNet)...")
+        seedling_model = ModelManager.get_model('IntegrateNet', 'maize', 'seedling_count')
+        logging.info("Seedling_count model loaded successfully")
 
-        for crop in crops:
-            for trait in traits:
-                for model in models:
-                    ModelManager.get_model(model, crop, trait)
-        
-        logging.info("Models initialized successfully")
+        # 预加载 tassel_count 的 V3segplus 模型
+        logging.info("Loading tassel_count model (V3segplus)...")
+        tassel_model = ModelManager.get_model('V3segplus', 'maize', 'tassel_count')
+        logging.info("Tassel_count model loaded successfully")
+
+        # 记录已加载的模型
+        logging.info("All models initialized successfully")
+        return {
+            'seedling': seedling_model,
+            'tassel': tassel_model
+        }
     except Exception as e:
         logging.error(f"Error initializing models: {str(e)}")
+        raise
 
 @app.errorhandler(Exception)
 def handle_error(error):
