@@ -2,7 +2,7 @@
 
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import create_access_token
-from config.login import User_name, User_password
+from config.login import USERS
 from datetime import timedelta
 
 login_bp = Blueprint('login', __name__)
@@ -16,7 +16,8 @@ def login():
     username = request.json.get('username')
     password = request.json.get('password')
 
-    if username == User_name and password == User_password:
+    # 检查用户名和密码是否匹配
+    if username in USERS and USERS[username] == password:
         # 生成访问令牌，设置过期时间
         access_token = create_access_token(identity=username, expires_delta=timedelta(minutes=30))
         return jsonify(access_token=access_token, expires_in=1800), 200

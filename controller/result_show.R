@@ -50,7 +50,7 @@ p1 <- ggplot() +
   theme_void()
 
 # Save the plot as SVG
-ggsave(filename = plot_id_map_path, plot = p1, height = 5, width = 10, dpi = 300, units = "in")
+#ggsave(filename = plot_id_map_path, plot = p1, height = 5, width = 10, dpi = 300, units = "in")
 
 # Read the count data
 df_count <- tryCatch({
@@ -76,7 +76,7 @@ p2 <- ggplot() +
   theme_void()
 
 # Save the count plot as SVG
-ggsave(filename = count_plot_path, plot = p2, height = 5, width = 10, dpi = 300, units = "in")
+#ggsave(filename = count_plot_path, plot = p2, height = 5, width = 10, dpi = 300, units = "in")
 
 # Create a histogram of the counts
 histogram_path <- file.path(output_dir, "tassel_count_histogram.svg")
@@ -88,10 +88,23 @@ p3 <- ggplot(df_count, aes(x = ID, y = pdcount)) +
   ggtitle("Tassel Count")
 
 # Save the histogram as SVG
-ggsave(filename = histogram_path, plot = p3, height = 5, width = 10, dpi = 300, units = "in")
+#ggsave(filename = histogram_path, plot = p3, height = 5, width = 10, dpi = 300, units = "in")
 
 # Return the paths of the generated files
 cat("Generated files:\n")
-cat("Plot ID Map: ", plot_id_map_path, "\n")
-cat("Count Plot: ", count_plot_path, "\n")
-cat("Histogram: ", histogram_path, "\n")
+#cat("Plot ID Map: ", plot_id_map_path, "\n")
+#cat("Count Plot: ", count_plot_path, "\n")
+#cat("Histogram: ", histogram_path, "\n")
+
+# Open a PDF device
+pdf(file.path(output_dir, "combined_plots.pdf"), height = 5, width = 10)
+
+# Print the plots to the PDF
+print(p1)
+print(p2)
+print(p3)
+
+# Close the PDF device
+dev.off()
+
+cat("All plots have been saved to a single PDF file successfully.\n") 

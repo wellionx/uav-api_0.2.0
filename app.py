@@ -11,9 +11,18 @@ from resources.result_show_resource import result_show_bp  # 导入结果可视�
 from config.config import Config
 from concurrent.futures import ThreadPoolExecutor
 from multiprocessing import Manager
+from controller.image_predict import load_model  # 导入 load_model 函数
 
 app = Flask(__name__)
 app.config.from_object(Config)
+
+# 添加文件上传配置
+app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
+app.config['MAX_CONTENT_LENGTH'] = 6 * 1024 * 1024  # 限制上传文件大小为 6MB
+app.config['ALLOWED_EXTENSIONS'] = {'jpg', 'jpeg', 'png'}
+
+# 确保上传文件夹存在
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # 初始化 JWTManager
 jwt = JWTManager(app)  # 确保在创建 Flask 应用后初始化 JWTManager
@@ -39,24 +48,26 @@ app.register_blueprint(result_show_bp)  # 注册结果可视化蓝图
 @app.before_first_request
 def initialize_models():
     try:
-        # 预加载 seedling_count 的 IntegrateNet 模型
+        # 只加载 seedling_count 模型
         logging.info("Loading seedling_count model (IntegrateNet)...")
-        seedling_model = ModelManager.get_model('IntegrateNet', 'maize', 'seedling_count')
+        seedling_model = load_model('IntegrateNet', 'maize', 'seedling_count')
+        ModelManager._models['IntegrateNet_maize_seedling_count'] = seedling_model
         logging.info("Seedling_count model loaded successfully")
 
-        # 预加载 tassel_count 的 V3segplus 模型
-        logging.info("Loading tassel_count model (V3segplus)...")
-        tassel_model = ModelManager.get_model('V3segplus', 'maize', 'tassel_count')
-        logging.info("Tassel_count model loaded successfully")
+        # TODO: 后续添加 tassel_count 模型
+        # logging.info("Loading tassel_count model (V3segplus)...")
+        # tassel_model = load_model('V3segplus', 'maize', 'tassel_count')
+        # ModelManager._models['V3segplus_maize_tassel_count'] = tassel_model
+        # logging.info("Tassel_count model loaded successfully")
 
-        # 记录已加载的模型
-        logging.info("All models initialized successfully")
+        logging.info("Model initialized successfully")
         return {
-            'seedling': seedling_model,
-            'tassel': tassel_model
+            'seedling': seedling_model
+            # 'tassel': tassel_model  # 暂时注释掉
         }
     except Exception as e:
         logging.error(f"Error initializing models: {str(e)}")
+        ModelManager._models.clear()
         raise
 
 @app.errorhandler(Exception)
@@ -67,11 +78,23 @@ def handle_error(error):
         'message': str(error)
     }), 500
 
+# 清理临时文件的函数
+def cleanup_temp_files():
+    """清理上传文件夹中的临时文件"""
+    try:
+        for filename in os.listdir(app.config['UPLOAD_FOLDER']):
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+    except Exception as e:
+        logging.error(f"Error cleaning up temporary files: {str(e)}")
+
 if __name__ == '__main__':
     try:
         app.run(host='0.0.0.0', port=8081)
     except Exception as e:
         logging.error(f"Application failed to start: {str(e)}")
     finally:
+        cleanup_temp_files()  # 清理临时文件
         executor.shutdown(wait=True)
         logging.info("Application shutdown complete")

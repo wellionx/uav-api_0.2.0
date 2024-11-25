@@ -1,5 +1,5 @@
 #!/usr/bin/env Rscript
-
+Sys.setenv(PROJ_LIB = "/usr/local/share/proj")
 # 确保sf, terra, dplyr 包已安装
 if (!requireNamespace("sf", quietly = TRUE)) install.packages("sf")
 if (!requireNamespace("terra", quietly = TRUE)) install.packages("terra")
