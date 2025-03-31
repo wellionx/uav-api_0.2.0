@@ -1,6 +1,7 @@
 # config/config.py
 
 import os
+import logging
 
 class Config:
     # JWT 配置
@@ -9,29 +10,24 @@ class Config:
     
     # 日志配置
     LOG_PATH = './logs/app.log'
-    LOG_LEVEL = 'INFO'
+    LOG_LEVEL = 'DEBUG'  # 设置为 DEBUG 以输出所有信息
     
     # 线程池和任务管理器配置
     EXECUTOR_MAX_WORKERS = 8
     TASK_STATUS = {}  # 可以在应用启动时初始化
-
-    # 输出目录
-    OUTPUT_DIR = './data/out/'
 
     @staticmethod
     def init_app(app):
         """初始化应用配置"""
         # 创建必要的目录
         os.makedirs(os.path.dirname(Config.LOG_PATH), exist_ok=True)
-        os.makedirs(Config.OUTPUT_DIR, exist_ok=True)
 
         # 配置日志
-        import logging
         logging.basicConfig(
-            level=getattr(logging, Config.LOG_LEVEL),
+            level=getattr(logging, Config.LOG_LEVEL),  # 设置日志级别
             format='%(asctime)s - %(levelname)s - %(message)s',
             handlers=[
-                logging.FileHandler(Config.LOG_PATH),
-                logging.StreamHandler()
+                logging.FileHandler(Config.LOG_PATH),  # 输出到文件
+                logging.StreamHandler()  # 输出到终端
             ]
         )

@@ -109,4 +109,4 @@ WORKDIR /uav_api
 
 # Expose 8081 ports for server
 CMD ["gunicorn", "-w", "1", "--threads", "64", "-b", "0.0.0.0:8081", "--access-logfile", "./log/access.log", "--error-logfile", "./log/error.log", "-t", "3600", "app:app"]
-#gunicorn -w 1 --threads 64 -b 0.0.0.0:8081 --access-logfile ./log/access.log --error-logfile ./log/error.log -t 3600 app:app
+# gunicorn -w 1 --threads 64 -b 0.0.0.0:8081 --access-logfile ./log/access.log --error-logfile ./log/error.log -t 3600 app:app
